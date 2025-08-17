@@ -1,3 +1,4 @@
+
 # Siperb-Provisioning JavaScript Library
 
 ## Overview
@@ -140,7 +141,95 @@ async function main() {
 main();
 ```
 
+
 ## Why Use This Library?
+
+## SIP.js and JsSIP Integration Examples
+
+### SIP.js Example
+
+Install SIP.js:
+```sh
+npm install sip.js
+```
+
+```js
+import Siperb from './Siperb-Provisioning.esm.js';
+import { UserAgent } from 'sip.js';
+
+async function main() {
+	// ...get session and provisioning as shown above...
+
+	// Build WebSocket server URL
+	const wsServer = `wss://${provisioning.wssServer}:443/ws/`;
+	const sipConfig = {
+		uri: `sip:${provisioning.SipUsername}@${provisioning.SipDomain}`,
+		authorizationUsername: provisioning.SipUsername,
+		authorizationPassword: provisioning.SipPassword,
+		contactName: provisioning.ContactUserName,
+		transportOptions: {
+			server: wsServer
+		}
+	};
+	const userAgent = new UserAgent(sipConfig);
+	userAgent.start(); // Registers with the SIP server
+
+	// Outbound call with custom headers
+	const target = 'sip:destination@example.com';
+	const inviter = userAgent.invite(target, {
+		requestDelegate: {},
+		requestOptions: {
+			extraHeaders: [
+				`X-Siperb-Sid: ${session.SessionToken}`,
+				`X-Siperb-Uid: ${session.UserId}`
+			]
+		}
+	});
+}
+```
+
+### JsSIP Example
+
+Install JsSIP:
+```sh
+npm install jssip
+```
+
+```js
+import Siperb from './Siperb-Provisioning.esm.js';
+import JsSIP from 'jssip';
+
+async function main() {
+	// ...get session and provisioning as shown above...
+
+	// Build WebSocket server URL
+	const wsServer = `wss://${provisioning.wssServer}:443/ws/`;
+	const socket = new JsSIP.WebSocketInterface(wsServer);
+	const configuration = {
+		sockets: [socket],
+		uri: `sip:${provisioning.SipUsername}@${provisioning.SipDomain}`,
+		password: provisioning.SipPassword,
+		contact_uri: `sip:${provisioning.ContactUserName}@${provisioning.SipDomain}`
+	};
+	const ua = new JsSIP.UA(configuration);
+	ua.start(); // Registers with the SIP server
+
+	// Outbound call with custom headers
+	const target = 'sip:destination@example.com';
+	const options = {
+		extraHeaders: [
+			`X-Siperb-Sid: ${session.SessionToken}`,
+			`X-Siperb-Uid: ${session.UserId}`
+		]
+	};
+	ua.call(target, options);
+}
+```
+
+These examples show how to:
+- Register with the SIP server using provisioned credentials
+- Always use a static contact (ContactUserName)
+- Make outbound calls with custom headers for session and user identification
 
 - **Security**: Handles authentication and session management securely.
 - **Convenience**: Provides a simple, promise-based API for all provisioning steps.
@@ -159,14 +248,15 @@ This project show how to Provision a Siperb Device and load Browser Phone, SIP.j
 
 ## Usage
 
+
 ### In the Browser
-Include the minified bundle in your HTML:
+Include the minified bundle from the CDN in your HTML:
 
 ```html
-<script src="Siperb-Provisioning.min.js"></script>
+<script src="https://cdn.siperb.com/lib/Siperb-Provisioning/Siperb-Provisioning.min.js"></script>
 <script>
-	// Now you can use window.Siperb.GetSession()
-	Siperb.GetSession();
+	// Now you can use window.SiperbAPI.GetSession()
+	SiperbAPI.GetSession();
 </script>
 ```
 
