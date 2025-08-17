@@ -253,7 +253,7 @@ This project show how to Provision a Siperb Device and load Browser Phone, SIP.j
 Include the minified bundle from the CDN in your HTML:
 
 ```html
-<script src="https://cdn.siperb.com/lib/Siperb-Provisioning/Siperb-Provisioning.min.js"></script>
+<script src="https://cdn.siperb.com/lib/Siperb-Provisioning/Siperb-Provisioning-0.0.3.min.js"></script>
 <script>
 	// Now you can use window.SiperbAPI.GetSession()
 	SiperbAPI.GetSession();
