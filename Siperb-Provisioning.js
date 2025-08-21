@@ -38,11 +38,13 @@ const Siperb = {
                         console.log(`GetSession: %cError occurred while parsing response: ${error.message}`, "color: red;");
                         return reject();
                     }
-                } else {
+                }
+                else {
                     console.log(`GetSession: %cFailed to retrieve session`, "color: red;");
                     return reject();
                 }
-            } catch (error) {
+            }
+            catch (error) {
                 console.log(`GetSession: %cError occurred: ${error.message}`, "color: red;");
                 return reject();
             }
@@ -125,14 +127,6 @@ const Siperb = {
                     catch(e){
                         console.log(`GetSession: %cError getting Session: ${e.message}`, "color: red;");
                     }
-                }
-                else if(response.status == 403){
-                    // ======================================================================
-                    // You are not actually logged in, or there is an issue with your session
-                    // ======================================================================
-                    console.log(`GetSession: %c403 Forbidden`, "color: red;");
-                    if(!isResolved) resolve(null);
-
                 }
                 else {
                     console.log(`GetSession: %cBad Response ${response.status}`, "color: red;");
@@ -223,14 +217,6 @@ const Siperb = {
                     catch(e){
                         console.log(`GetProvisioning: %cError getting Provisioning: ${e.message}`, "color: red;");
                     }
-                }
-                else if(response.status == 403){
-                    // ======================================================================
-                    // You are not actually logged in, or there is an issue with your session
-                    // ======================================================================
-                    console.log(`GetProvisioning: %c403 Forbidden`, "color: red;");
-                    if(!isResolved) resolve(null);
-
                 }
                 else {
                     console.log(`GetProvisioning: %cBad Response ${response.status}`, "color: red;");
