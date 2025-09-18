@@ -20,8 +20,9 @@ jobs:
           aws-region: eu-west-1
 
       - name: Install dependencies
-        run: npm install
-        run: npm run build
+        run: |
+          npm install
+          npm run build
 
       - name: Upload distributable files to S3
         run: |
