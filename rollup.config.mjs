@@ -6,25 +6,17 @@ export default {
   input: 'Siperb-Provisioning.js',
   output: [
     {
-      file: 'Siperb-Provisioning.umd.js',
+      file: 'dist/Siperb-Provisioning.umd.min.js',
       format: 'umd',
       name: 'Siperb',
       exports: 'default',
-      sourcemap: true
+      plugins: [terser()]
     },
     {
-      file: 'Siperb-Provisioning.min.js',
-      format: 'umd',
-      name: 'Siperb',
-      plugins: [terser()],
-      exports: 'default',
-      sourcemap: true
-    },
-    {
-      file: 'Siperb-Provisioning.esm.js',
+      file: 'dist/Siperb-Provisioning.esm.min.js',
       format: 'esm',
       exports: 'default',
-      sourcemap: true
+      plugins: [terser()]
     }
   ],
   plugins: [

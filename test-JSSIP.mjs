@@ -2,7 +2,7 @@
 // You must install JsSIP in your project for this test to work.
 // npm install jssip
 
-import Siperb from './Siperb-Provisioning.esm.js';
+import Siperb from './dist/Siperb-Provisioning.esm.min.js';
 import JsSIP from 'jssip';
 
 async function main() {

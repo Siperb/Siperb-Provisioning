@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "siperb-provisioning",
   "version": "1.0.0",
   "description": "This project show how to Provision a Siperb Device and load Browser Phone, SIP.js JsSIP.js or your own custom Web-based SIP client.",

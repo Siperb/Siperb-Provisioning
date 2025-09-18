@@ -36,17 +36,17 @@ const Siperb = {
                     }
                     catch (error) {
                         console.log(`GetSession: %cError occurred while parsing response: ${error.message}`, "color: red;");
-                        return reject();
+                        return reject(error.message);
                     }
                 }
                 else {
                     console.log(`GetSession: %cFailed to retrieve session`, "color: red;");
-                    return reject();
+                    return reject(response.statusText || 'Failed to retrieve session');
                 }
             }
             catch (error) {
                 console.log(`GetSession: %cError occurred: ${error.message}`, "color: red;");
-                return reject();
+                return reject(error.message);
             }
         });
     },
@@ -181,7 +181,7 @@ const Siperb = {
             // Not using cache, fetch from API
 
             // Now perform the API call
-        const url = `https://api.siperb.com/Users/${options.UserId}/Devices/${options.DeviceToken}/?password=yes&settings_json=yes`;
+            const url = `https://api.siperb.com/Users/${options.UserId}/Devices/${options.DeviceToken}/?password=yes&settings_json=yes`;
             const fetchOptions =  {
                 method: 'GET',
                 headers: {

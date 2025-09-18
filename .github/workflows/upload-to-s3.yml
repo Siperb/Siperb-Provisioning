@@ -26,6 +26,5 @@ jobs:
       - name: Upload distributable files to S3
         run: |
           VERSION=$(cat VERSION)
-          aws s3 cp Siperb-Provisioning.min.js s3://cdn.siperb.com/lib/Siperb-Provisioning/Siperb-Provisioning-${VERSION}.min.js --acl public-read --cache-control "max-age=2628000"
-          aws s3 cp Siperb-Provisioning.umd.js s3://cdn.siperb.com/lib/Siperb-Provisioning/Siperb-Provisioning-${VERSION}.umd.js --acl public-read --cache-control "max-age=2628000"
-          aws s3 cp Siperb-Provisioning.esm.js s3://cdn.siperb.com/lib/Siperb-Provisioning/Siperb-Provisioning-${VERSION}.esm.js --acl public-read --cache-control "max-age=2628000"
+          aws s3 cp dist/Siperb-Provisioning.umd.min.js s3://cdn.siperb.com/lib/Siperb-Provisioning/Siperb-Provisioning-${VERSION}.umd.min.js --acl public-read --cache-control "max-age=2628000"
+          aws s3 cp dist/Siperb-Provisioning.esm.min.js s3://cdn.siperb.com/lib/Siperb-Provisioning/Siperb-Provisioning-${VERSION}.esm.min.js --acl public-read --cache-control "max-age=2628000"

@@ -98,7 +98,7 @@ console.log(provisioning.SIPUsername, provisioning.SIPPassword);
 ## Full Example: End-to-End Usage
 
 ```js
-import Siperb from './Siperb-Provisioning.esm.js';
+import Siperb from './dist/Siperb-Provisioning.esm.js';
 
 async function main() {
 	// 1. Authenticate and get session
@@ -154,7 +154,7 @@ npm install sip.js
 ```
 
 ```js
-import Siperb from './Siperb-Provisioning.esm.js';
+import Siperb from './dist/Siperb-Provisioning.esm.js';
 import { UserAgent } from 'sip.js';
 
 async function main() {
@@ -196,7 +196,7 @@ npm install jssip
 ```
 
 ```js
-import Siperb from './Siperb-Provisioning.esm.js';
+import Siperb from './dist/Siperb-Provisioning.esm.js';
 import JsSIP from 'jssip';
 
 async function main() {

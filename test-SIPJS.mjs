@@ -2,7 +2,7 @@
 // You must install SIP.js in your project for this test to work.
 // npm install sip.js
 
-import Siperb from './Siperb-Provisioning.esm.js';
+import Siperb from './dist/Siperb-Provisioning.esm.min.js';
 import { UserAgent } from 'sip.js';
 
 async function main() {
