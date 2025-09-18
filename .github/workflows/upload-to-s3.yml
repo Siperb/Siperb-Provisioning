@@ -19,9 +19,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-west-1
 
+      - name: Install dependencies
+        run: npm install
+        run: npm run build
+
       - name: Upload distributable files to S3
         run: |
           VERSION=$(cat VERSION)
-          npm run build
           aws s3 cp dist/Siperb-Provisioning.umd.min.js s3://cdn.siperb.com/lib/Siperb-Provisioning/Siperb-Provisioning-${VERSION}.umd.min.js --acl public-read --cache-control "max-age=2628000"
           aws s3 cp dist/Siperb-Provisioning.esm.min.js s3://cdn.siperb.com/lib/Siperb-Provisioning/Siperb-Provisioning-${VERSION}.esm.min.js --acl public-read --cache-control "max-age=2628000"
