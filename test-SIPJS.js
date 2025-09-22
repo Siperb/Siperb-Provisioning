@@ -1,0 +1,60 @@
+async function main() {
+  const accessToken = '<YOUR_PERSONAL_ACCESS_TOKEN>';
+  let session;
+  try {
+    session = await window.Siperb.Login(accessToken);
+  } catch (error) {
+    console.error('Failed to get session:', error);
+    return;
+  }
+
+  // Assume you have a known DeviceToken or use GetDevices as in test.js
+  // See admin control Panel for generating Script Devices (to get DeviceToken)
+  const deviceToken = "<YOUR_KNOWN_DEVICE_TOKEN>";
+  const provisioning = await window.Siperb.GetProvisioning({
+    UserId: session.UserId,
+    DeviceToken: deviceToken,
+    SessionToken: session.SessionToken,
+    EnableCache: true,
+    ProvisioningKey: 'SiperbProvisioning'
+  });
+
+  // Build WebSocket server URL
+  const uri = window.SIP.UserAgent.makeURI(`sip:${provisioning.SipUsername}@${provisioning.SipDomain}`);
+  const wsServer = `wss://${provisioning.SipWssServer}:${provisioning.SipWebsocketPort}/${provisioning.SipServerPath}`;
+  // Example SIP.js configuration using provisioning details
+  const sipConfig = {
+    uri: uri,
+    authorizationUsername: provisioning.SipUsername,
+    authorizationPassword: provisioning.SipPassword,
+    contactName: provisioning.SipContact,
+    transportOptions: {
+      server: wsServer
+    }
+    // ...other SIP.js options as needed
+  };
+
+  console.log('SIP.js config:', sipConfig);
+
+  // Start SIP.js UserAgent
+  const userAgent = new window.SIP.UserAgent(sipConfig);
+  await userAgent.start();
+  console.log('SIP.js UserAgent started.');
+
+  // Example: Make an outbound call with custom headers
+  const target = window.SIP.UserAgent.makeURI("sip:*65@siperb.com"); // Replace with real destination
+  const options = {
+    extraHeaders: [
+      `X-Siperb-Sid: ${session.SessionToken}`,
+      `X-Siperb-Uid: ${session.UserId}`
+    ]
+  }
+  const inviter = new window.SIP.Inviter(userAgent, target, options);
+  await inviter.invite();
+  console.log('Outbound call initiated with custom headers.');
+  // End of demonstration
+}
+
+window.addEventListener('load', () => {
+  main();
+});

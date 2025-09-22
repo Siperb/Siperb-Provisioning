@@ -1,23 +1,17 @@
-// Example: Using Siperb-Provisioning with JsSIP
-// You must install JsSIP in your project for this test to work.
-// npm install jssip
-
-import Siperb from './dist/Siperb-Provisioning.esm.min.js';
-import JsSIP from 'jssip';
-
 async function main() {
-  const accessToken = 'YOUR_ACCESS_TOKEN_HERE';
+  const accessToken = '<YOUR_PERSONAL_ACCESS_TOKEN>';
   let session;
   try {
-    session = await Siperb.GetSession(accessToken);
+    session = await window.Siperb.Login(accessToken);
   } catch (error) {
     console.error('Failed to get session:', error);
     return;
   }
 
   // Assume you have a known DeviceToken or use GetDevices as in test.js
-  const deviceToken = 'YOUR_KNOWN_DEVICE_TOKEN';
-  const provisioning = await Siperb.GetProvisioning({
+  // See admin control Panel for generating Script Devices (to get DeviceToken)
+  const deviceToken = "<YOUR_KNOWN_DEVICE_TOKEN>";
+  const provisioning = await window.Siperb.GetProvisioning({
     UserId: session.UserId,
     DeviceToken: deviceToken,
     SessionToken: session.SessionToken,
@@ -25,11 +19,10 @@ async function main() {
     ProvisioningKey: 'SiperbProvisioning'
   });
 
-  // Example JsSIP configuration using provisioning details
-
   // Build WebSocket server URL
-  const wsServer = `wss://${provisioning.wssServer}:443/ws/`;
-  const socket = new JsSIP.WebSocketInterface(wsServer);
+  const wsServer = `wss://${provisioning.SipWssServer}:${provisioning.SipWebsocketPort}/${provisioning.SipServerPath}`;
+  // Example JsSIP configuration using provisioning details
+  const socket = new window.JsSIP.WebSocketInterface(wsServer);
   const configuration = {
     sockets: [socket],
     uri: `sip:${provisioning.SipUsername}@${provisioning.SipDomain}`,
@@ -41,12 +34,12 @@ async function main() {
   console.log('JsSIP config:', configuration);
 
   // Start JsSIP UserAgent
-  const ua = new JsSIP.UA(configuration);
+  const ua = new window.JsSIP.UA(configuration);
   ua.start();
   console.log('JsSIP UA started.');
 
   // Example: Make an outbound call with custom headers
-  const target = 'sip:destination@example.com'; // Replace with real destination
+  const target = 'sip:*65@example.com'; // Replace with real destination
   const eventHandlers = {};
   const options = {
     extraHeaders: [
@@ -57,6 +50,9 @@ async function main() {
   };
   ua.call(target, options);
   console.log('Outbound call initiated with custom headers.');
+  // End of demonstration
 }
 
-main();
+window.addEventListener('load', () => {
+  main();
+});

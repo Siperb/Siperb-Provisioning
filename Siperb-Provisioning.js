@@ -8,24 +8,24 @@
 // Define the Siperb namespace object
 const Siperb = {
     /**
-     * GetSession - fetches your session token using you access token.
-     * @param {string} accessToken - your access token
+     * Login - fetches your session token using you access token.
+     * @param {string} pat - Your Personal Access Token (PAT) generated from the Admin Control Panel
      * @returns {Promise<Object>} - resolves with session object
      */
-    GetSession(accessToken){
+    Login(pat){
         return new Promise(async (resolve, reject) => {
             try {
                 const response = await fetch(`https://api.siperb.com/Login`, {
-                    method: 'GET',
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${accessToken}`
+                        'Authorization': `Bearer ${pat}`
                     }
                 });
                 if (response.ok) {
                     try{
                         const data = await response.json();
-                        console.log(`GetSession: %cSession retrieved successfully`, "color: green;");
+                        console.log(`Login: %cSession retrieved successfully`, "color: green;");
 
                         if(typeof window !== 'undefined'){
                             window.SiperbAPI = window.SiperbAPI || {};
@@ -35,17 +35,17 @@ const Siperb = {
                         return resolve(data);
                     }
                     catch (error) {
-                        console.log(`GetSession: %cError occurred while parsing response: ${error.message}`, "color: red;");
+                        console.log(`Login: %cError occurred while parsing response: ${error.message}`, "color: red;");
                         return reject(error.message);
                     }
                 }
                 else {
-                    console.log(`GetSession: %cFailed to retrieve session`, "color: red;");
+                    console.log(`Login: %cFailed to retrieve session`, "color: red;");
                     return reject(response.statusText || 'Failed to retrieve session');
                 }
             }
             catch (error) {
-                console.log(`GetSession: %cError occurred: ${error.message}`, "color: red;");
+                console.log(`Login: %cError occurred: ${error.message}`, "color: red;");
                 return reject(error.message);
             }
         });
@@ -108,7 +108,8 @@ const Siperb = {
                     // Get the Session from the response
                     try{
                         let data = await response.json();
-
+                        // Filter for Platform script
+                        data = data.filter(item => item.Platform === 'script');
                         // Save the json data to the localStorage
                         if(typeof options.EnableCache === "boolean" && options.EnableCache === true){
                             if(typeof options.SessionKey === "string" && options.SessionKey !== ""){
@@ -126,6 +127,7 @@ const Siperb = {
                     }
                     catch(e){
                         console.log(`GetSession: %cError getting Session: ${e.message}`, "color: red;");
+                        if(!isResolved) resolve(null);
                     }
                 }
                 else {
@@ -197,25 +199,32 @@ const Siperb = {
                     // Get the Provisioning from the response
                     try{
                         let data = await response.json();
-                        data = data.Settings_json || {};
+                        if(data.Platform && data.Platform === 'script'){
+                            data = data.Settings_json || {};
 
-                        // Save the json data to the localStorage
-                        if(typeof options.EnableCache === "boolean" && options.EnableCache === true){
-                            if(typeof options.ProvisioningKey === "string" && options.ProvisioningKey !== ""){
-                                if(typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'){
-                                    window.localStorage.setItem(options.ProvisioningKey, JSON.stringify(data));
-                                    console.log(`GetProvisioning: %cUpdated Provisioning`, "color: green;");
+                            // Save the json data to the localStorage
+                            if(typeof options.EnableCache === "boolean" && options.EnableCache === true){
+                                if(typeof options.ProvisioningKey === "string" && options.ProvisioningKey !== ""){
+                                    if(typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'){
+                                        window.localStorage.setItem(options.ProvisioningKey, JSON.stringify(data));
+                                        console.log(`GetProvisioning: %cUpdated Provisioning`, "color: green;");
+                                    }
                                 }
                             }
+                            if(typeof window !== 'undefined'){
+                                window.SiperbAPI = window.SiperbAPI || {};
+                                window.SiperbAPI.PROVISIONING = data;
+                            }
+                            if(!isResolved) resolve(data);
                         }
-                        if(typeof window !== 'undefined'){
-                            window.SiperbAPI = window.SiperbAPI || {};
-                            window.SiperbAPI.PROVISIONING = data;
+                        else {
+                            console.log(`GetProvisioning: %cNo valid Platform found`, "color: orange;");
+                            if(!isResolved) resolve(null);
                         }
-                        if(!isResolved) resolve(data);
                     }
                     catch(e){
                         console.log(`GetProvisioning: %cError getting Provisioning: ${e.message}`, "color: red;");
+                        if(!isResolved) resolve(null);
                     }
                 }
                 else {

@@ -7,20 +7,19 @@ Siperb-Provisioning is a JavaScript library for securely retrieving user session
 
 ## Typical Usage Sequence
 
-
-1. **GetSession**: Authenticate with your access token to obtain a session token and user ID.
+1. **Login**: Authenticate with your access token to obtain a session token and user ID.
 2. **GetDevices** (optional): Retrieve the list of devices associated with the user (optionally using caching). This step is not essential if you already have your DeviceToken (e.g., from the Admin Control Panel).
-3. **GetProvisioning**: Fetch provisioning details for a specific device, including SIP credentials and settings (optionally using caching). You can call this directly after GetSession if you know your DeviceToken.
+3. **GetProvisioning**: Fetch provisioning details for a specific device, including SIP credentials and settings (optionally using caching). You can call this directly after ```Login``` if you know your DeviceToken.
 
-**Note:** If you already have your DeviceToken (for example, from the Siperb Admin Control Panel), you can skip GetDevices and call GetProvisioning immediately after GetSession. This is useful for automated scripts or when provisioning a known device.
+**Note:** If you already have your DeviceToken (for example, from the Siperb Admin Control Panel), you can skip GetDevices and call GetProvisioning immediately after ```Login```. This is useful for automated scripts or when provisioning a known device.
 
 This sequence allows a user to securely obtain all information needed to configure a SIP client or device.
 
 ## API Reference
 
-### Siperb.GetSession(accessToken)
+### Siperb.Login(pat)
 **Parameters:**
-- `accessToken` (string): Your Siperb access token (from OAuth or other authentication).
+- `pat` (string): Your Siperb Personal Access Token (PAT) (from Admin Control Panel).
 
 **Returns:**
 - `Promise<Object>`: Resolves with a session object containing at least `SessionToken` and `UserId`.
@@ -33,15 +32,15 @@ This sequence allows a user to securely obtain all information needed to configu
 
 **Example:**
 ```js
-const session = await Siperb.GetSession('YOUR_ACCESS_TOKEN');
+const session = await Siperb.Login('YOUR_ACCESS_TOKEN');
 console.log(session.SessionToken, session.UserId);
 ```
 
 ### Siperb.GetDevices(options)
 **Parameters:**
 - `options` (object):
-	- `UserId` (string): The user ID (from GetSession)
-	- `SessionToken` (string): The session token (from GetSession)
+	- `UserId` (string): The user ID (from ```Login```)
+	- `SessionToken` (string): The session token (from ```Login```)
 	- `EnableCache` (boolean, optional): Whether to use localStorage caching
 	- `SessionKey` (string, optional): The cache key for devices
 
@@ -68,9 +67,9 @@ console.log(devices);
 ### Siperb.GetProvisioning(options)
 **Parameters:**
 - `options` (object):
-	- `UserId` (string): The user ID (from GetSession)
+	- `UserId` (string): The user ID (from ```Login```)
 	- `DeviceToken` (string): The device token (from a device in GetDevices)
-	- `SessionToken` (string): The session token (from GetSession)
+	- `SessionToken` (string): The session token (from ```Login```)
 	- `EnableCache` (boolean, optional): Whether to use localStorage caching
 	- `ProvisioningKey` (string, optional): The cache key for provisioning
 
@@ -98,13 +97,13 @@ console.log(provisioning.SIPUsername, provisioning.SIPPassword);
 ## Full Example: End-to-End Usage
 
 ```js
-import Siperb from './dist/Siperb-Provisioning.esm.js';
+import Siperb from './dist/Siperb-Provisioning.esm.min.js';
 
 async function main() {
 	// 1. Authenticate and get session
 	let session;
 	try {
-		session = await Siperb.GetSession('YOUR_ACCESS_TOKEN');
+		session = await Siperb.Login('YOUR_ACCESS_TOKEN');
 		console.log('Session:', session);
 	} catch (error) {
 		console.error('Failed to get session:', error);
@@ -154,7 +153,7 @@ npm install sip.js
 ```
 
 ```js
-import Siperb from './dist/Siperb-Provisioning.esm.js';
+import Siperb from './dist/Siperb-Provisioning.esm.min.js';
 import { UserAgent } from 'sip.js';
 
 async function main() {
@@ -196,7 +195,7 @@ npm install jssip
 ```
 
 ```js
-import Siperb from './dist/Siperb-Provisioning.esm.js';
+import Siperb from './dist/Siperb-Provisioning.esm.min.js';
 import JsSIP from 'jssip';
 
 async function main() {
@@ -253,10 +252,10 @@ This project show how to Provision a Siperb Device and load Browser Phone, SIP.j
 Include the minified bundle from the CDN in your HTML:
 
 ```html
-<script src="https://cdn.siperb.com/lib/Siperb-Provisioning/Siperb-Provisioning-0.0.3.min.js"></script>
+<script src="https://cdn.siperb.com/lib/Siperb-Provisioning/Siperb-Provisioning-0.0.8.umd.min.js"></script>
 <script>
-	// Now you can use window.SiperbAPI.GetSession()
-	SiperbAPI.GetSession();
+	// Now you can use window.SiperbAPI.Login()
+	SiperbAPI.Login(PAT);
 </script>
 ```
 
@@ -264,12 +263,12 @@ Include the minified bundle from the CDN in your HTML:
 
 ```js
 // ESM
-import Siperb from './Siperb-Provisioning.esm.js';
-Siperb.GetSession();
+import Siperb from './dist/Siperb-Provisioning.esm.min.js';
+Siperb.Login(PAT);
 
 // CommonJS (if you bundle for Node.js)
-// const Siperb = require('./Siperb-Provisioning.umd.js');
-// Siperb.GetSession();
+// const Siperb = require('./dist//Siperb-Provisioning.umd.min.js');
+// Siperb.Login(PAT);
 ```
 
 ## Building, Running, and Compiling the Library
@@ -299,6 +298,11 @@ npm start
 ```
 
 This will create:
-- `Siperb-Provisioning.umd.js` (UMD for browser and Node.js)
-- `Siperb-Provisioning.min.js` (minified UMD for browser)
-- `Siperb-Provisioning.esm.js` (ES module)
+- `./dist/Siperb-Provisioning.umd.min.js` (UMD for browser and Node.js)
+- `./dist/Siperb-Provisioning.esm.min.js` (ES module)
+
+## Testing:
+Preview the provided test files, and modify as needed: 
+```
+python3 -m http.server 7777
+```
