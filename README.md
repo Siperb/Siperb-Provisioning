@@ -1,9 +1,77 @@
+![Siperb](https://cdn.siperb.com/images/SIPERB-Logo-onlight.webp)
 
-# Siperb-Provisioning JavaScript Library
+# SIPERB Provisioning
+
+Open‑source Browser Phone / Web Phone SDK for WebRTC and VoIP — securely provision SIP sessions, devices, and credentials for SIP.js, JsSIP, and custom softphones.
+
+[![License](https://img.shields.io/github/license/Siperb/Siperb-Provisioning?color=4c1)](https://github.com/Siperb/Siperb-Provisioning/blob/main/LICENSE)
+![Module formats](https://img.shields.io/badge/module-ESM%20%2B%20UMD-4c1)
+![Minified](https://img.shields.io/badge/minified-yes-4c1)
+[![CDN](https://img.shields.io/badge/CDN-available-blue)](#in-the-browser)
+![Node](https://img.shields.io/badge/Node-%3E%3D%2016-3178c6)
+
+## Contents
+
+- Overview
+- Features
+- Who is this for?
+- Quick Start
+	- In the Browser (global)
+	- As a Module (ESM)
+- Typical Usage Sequence
+- API Reference
+- Full Example
+- SIP.js and JsSIP Integration
+- Testing locally
+- Troubleshooting & FAQ
+- Notes
+- License
 
 ## Overview
 
-Siperb-Provisioning is a JavaScript library for securely retrieving user session, device, and provisioning information from the Siperb API. It is designed for use in both browser and module environments, supporting modern workflows and caching for performance.
+Siperb‑Provisioning is a lightweight JavaScript SDK that powers open‑source Web Phone / Browser Phone applications. It securely retrieves user session, devices, and SIP provisioning (username, password, domain, WSS/WebSocket) from the Siperb API so you can bootstrap a WebRTC softphone in minutes. Use it to initialize SIP.js, JsSIP, or your own VoIP client with consistent, secure provisioning flows — in both browser and module environments, with optional caching for performance.
+
+## Features
+
+- Modern dual build: ESM and UMD (minified)
+- Works in both browser (global `window.SiperbAPI`) and module projects
+- Simple promise-based API: Login → Devices → Provisioning
+- Optional caching with localStorage
+- Battle-tested examples with SIP.js and JsSIP
+- CDN-ready for quick prototypes and demos
+
+## Who is this for?
+
+- Teams building an open‑source Browser Phone or embedded Web Phone in SaaS/CRM
+- Developers integrating a WebRTC softphone (VoIP) using SIP.js or JsSIP
+- Contact centers and PWAs that need secure SIP provisioning over WSS
+- Anyone who wants a simple SDK to automate device provisioning and login flows
+- Projects migrating desk phone provisioning into a modern, browser‑based softphone
+
+## Quick Start
+
+### In the Browser
+Include the minified bundle from the CDN in your HTML:
+
+```html
+<script src="https://cdn.siperb.com/lib/Siperb-Provisioning/Siperb-Provisioning-0.0.8.umd.min.js"></script>
+<script>
+	// Now you can use window.SiperbAPI
+	SiperbAPI.Login('YOUR_ACCESS_TOKEN').then(session => {
+		console.log('Session:', session);
+	});
+	// Or: await SiperbAPI.Login(...) inside an async IIFE
+</script>
+```
+
+### As a Module (ESM)
+
+```js
+import Siperb from './dist/Siperb-Provisioning.esm.min.js';
+
+const session = await Siperb.Login('YOUR_ACCESS_TOKEN');
+console.log(session.SessionToken, session.UserId);
+```
 
 ## Typical Usage Sequence
 
@@ -91,7 +159,7 @@ const provisioning = await Siperb.GetProvisioning({
 	EnableCache: true,
 	ProvisioningKey: 'SiperbProvisioning'
 });
-console.log(provisioning.SIPUsername, provisioning.SIPPassword);
+console.log(provisioning.SipUsername, provisioning.SipPassword);
 ```
 
 ## Full Example: End-to-End Usage
@@ -130,8 +198,8 @@ async function main() {
 		});
 		console.log('Provisioning:', provisioning);
 		// Example: Use SIP credentials
-		console.log('SIP Username:', provisioning.SIPUsername);
-		console.log('SIP Password:', provisioning.SIPPassword);
+		console.log('SIP Username:', provisioning.SipUsername);
+		console.log('SIP Password:', provisioning.SipPassword);
 	} else {
 		console.log('No devices found for provisioning.');
 	}
@@ -145,7 +213,7 @@ main();
 
 ## SIP.js and JsSIP Integration Examples
 
-### SIP.js Example
+### SIP.js Example (Module projects)
 
 Install SIP.js:
 ```sh
@@ -160,7 +228,7 @@ async function main() {
 	// ...get session and provisioning as shown above...
 
 	// Build WebSocket server URL
-	const wsServer = `wss://${provisioning.wssServer}:443/ws/`;
+	const wsServer = `wss://${provisioning.SipWssServer}:${provisioning.SipWebsocketPort}/${provisioning.SipServerPath}`;
 	const sipConfig = {
 		uri: `sip:${provisioning.SipUsername}@${provisioning.SipDomain}`,
 		authorizationUsername: provisioning.SipUsername,
@@ -187,7 +255,7 @@ async function main() {
 }
 ```
 
-### JsSIP Example
+### JsSIP Example (Browser friendly)
 
 Install JsSIP:
 ```sh
@@ -202,7 +270,7 @@ async function main() {
 	// ...get session and provisioning as shown above...
 
 	// Build WebSocket server URL
-	const wsServer = `wss://${provisioning.wssServer}:443/ws/`;
+	const wsServer = `wss://${provisioning.SipWssServer}:${provisioning.SipWebsocketPort}/${provisioning.SipServerPath}`;
 	const socket = new JsSIP.WebSocketInterface(wsServer);
 	const configuration = {
 		sockets: [socket],
@@ -236,6 +304,44 @@ These examples show how to:
 - **Browser & Module Support**: Works in both browser and modern JS module environments.
 - **Extensible**: Easily add more API calls or extend caching logic as needed.
 
+## Testing locally
+
+You can quickly try the included demo/test files in a local static server:
+
+```sh
+python3 -m http.server 7777
+```
+
+Then open these in your browser:
+
+- `http://localhost:7777/test-SIPJS.html` — SIP.js via browser with global `SIP` if you bundle it yourself; otherwise see JsSIP example
+- `http://localhost:7777/test-SIPJS.js` — referenced by the HTML (adjust as needed)
+- `http://localhost:7777/test-JSSIP.js` — JsSIP module example (or load JsSIP from CDN and use `window.JsSIP`)
+
+Notes:
+- JsSIP offers a CDN UMD build you can load in a `<script>` tag:
+	```html
+	<script src="https://cdn.jsdelivr.net/npm/jssip@3/dist/jssip.min.js"></script>
+	<script>
+		const JsSIP = window.JsSIP;
+		// ... use JsSIP here ...
+	</script>
+	```
+- SIP.js does not currently provide a stable ES module on CDN. Use it in module projects via npm (`import { UserAgent } from 'sip.js'`) or bundle it for the browser.
+
+## Troubleshooting & FAQ
+
+- Browser error: `Failed to resolve module specifier "sip.js"`
+	- Cause: Trying to import SIP.js directly in the browser without bundling.
+	- Fix: Use JsSIP via CDN for browser tests, or bundle SIP.js (Rollup/Webpack) for `<script type="module">` usage.
+
+- Node error: `WebSocket is not defined` when using SIP.js in Node
+	- Cause: SIP.js expects a browser-like WebSocket. Node needs a WebSocket implementation.
+	- Fix: Add a WebSocket polyfill (e.g., `npm i ws`) and wire it before constructing the UserAgent, or run the test in a browser.
+
+- Mixed provisioning field names (SIPUsername vs SipUsername)
+	- Use `SipUsername`, `SipPassword`, `SipDomain`, `SipWssServer`, `SipWebsocketPort`, `SipServerPath`, and `ContactUserName` consistently.
+
 ## Notes
 - Always keep your access tokens secure and never expose them in client-side code unless you trust the environment.
 - The provisioning object may contain sensitive SIP credentials—handle with care.
@@ -244,32 +350,6 @@ These examples show how to:
 See LICENSE file.
 # Siperb-Provisioning
 This project show how to Provision a Siperb Device and load Browser Phone, SIP.js JsSIP.js or your own custom Web-based SIP client.
-
-## Usage
-
-
-### In the Browser
-Include the minified bundle from the CDN in your HTML:
-
-```html
-<script src="https://cdn.siperb.com/lib/Siperb-Provisioning/Siperb-Provisioning-0.0.8.umd.min.js"></script>
-<script>
-	// Now you can use window.SiperbAPI.Login()
-	SiperbAPI.Login(PAT);
-</script>
-```
-
-### As a Module (ESM/CommonJS)
-
-```js
-// ESM
-import Siperb from './dist/Siperb-Provisioning.esm.min.js';
-Siperb.Login(PAT);
-
-// CommonJS (if you bundle for Node.js)
-// const Siperb = require('./dist//Siperb-Provisioning.umd.min.js');
-// Siperb.Login(PAT);
-```
 
 ## Building, Running, and Compiling the Library
 
@@ -301,8 +381,4 @@ This will create:
 - `./dist/Siperb-Provisioning.umd.min.js` (UMD for browser and Node.js)
 - `./dist/Siperb-Provisioning.esm.min.js` (ES module)
 
-## Testing:
-Preview the provided test files, and modify as needed: 
-```
-python3 -m http.server 7777
-```
+---
