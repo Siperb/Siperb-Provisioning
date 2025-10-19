@@ -237,7 +237,365 @@ const Siperb = {
                 if(!isResolved) resolve(null);
             }
         });
-    }
+    },
+    LoadBrowserPhone(iframeElement){
+        return new Promise(async function(resolve, reject){
+            // Load the Browser Phone into the IFRAME
+            if (!iframeElement || !iframeElement.contentWindow || !iframeElement.contentWindow.document) {
+                console.log(`LoadBrowserPhone: %cInvalid IFRAME element`, "color: red;");
+                return reject("Invalid IFRAME element");
+            }
+
+            const PhoneWindow = iframeElement.contentWindow;
+            const phoneDoc = PhoneWindow.document;
+            // Load the Browser Phone Layer
+            let phoneVersionTree = await Siperb.LoadVersionTree("https://y3amulnpc5icrmmnmvtfn44zba0ckjuq.lambda-url.eu-west-1.on.aws/", "BROWSER_PHONE_VERSION_TREE");
+            if (!phoneVersionTree) {
+                console.log(`LoadBrowserPhone: %cPhone Version tree could not be loaded`, "color: red;");
+                return reject("Phone Version tree could not be loaded");
+            }
+            // Update versionTree to set all the Loaded properties to false
+            phoneVersionTree.forEach(function(asset) {
+                asset.Loaded = false;
+            });
+            // Load the HTML file
+            await Siperb.LoadHtml(phoneVersionTree, "web", phoneDoc);
+            // Load the CSS files
+            await Siperb.LoadCss(phoneVersionTree, "web", phoneDoc);
+            // Load the JS files, and star the phone
+            await Siperb.LoadScripts(phoneVersionTree, "web", phoneDoc);
+
+            // Show Phone Page
+            const phone = (PhoneWindow.phone)? PhoneWindow.phone : null;
+            if(phone){
+                console.log("%cBrowser Phone loaded successfully", "color: green;");
+                // At this point the phone should be loaded
+                // all the scripts are downloaded from the network, but are designed
+                // only to work if they are Initialized.
+                return resolve();
+            }
+            else {
+                console.log("%cBrowser Phone failed to load.", "color: red;");
+                return reject("Browser Phone failed to load.");
+            }
+        });
+    },
+    LoadVersionTree(url, cacheKey) {
+        return new Promise(async function (resolve, reject) {
+            // Check if the version tree is already in localStorage
+            let isResolved = false;
+            let versionTree = localStorage.getItem(cacheKey);
+            if (versionTree) {
+                // Parse the JSON string to an object
+                versionTree = JSON.parse(versionTree);
+                // Resolve the Promise but don't return the function
+                console.log(`LoadVersionTree - ${cacheKey}: %cUsing cached version tree`,  "color: orange;");
+                resolve(versionTree);
+                isResolved = true;
+            }
+            // Update version tree even if you have it in localStorage
+            if(window.navigator.onLine){
+                let response = null;
+                try{
+                    response = await fetch(url);
+                    if (response.ok) {
+                        // Get the version from the response
+                        versionTree = await response.json();
+                        // Save the json data to the localStorage
+                        localStorage.setItem(cacheKey, JSON.stringify(versionTree));
+                        if (!isResolved) resolve(versionTree);
+                    }
+                    else {
+                        console.log(`LoadVersionTree - ${cacheKey}: %cBad Response`, "color: orange;");
+                        if (!isResolved) resolve(null);
+                    }
+                } catch(err){
+                    console.log(`LoadVersionTree - ${cacheKey}: %cError: ${err.message}`, "color: red;");
+                    if (!isResolved) resolve(null);
+                }
+            }
+            else {
+                console.log(`LoadVersionTree - ${cacheKey}: %cFetch Skipped, you are offline`,  "color: orange;");
+                if (!isResolved) resolve(null);
+            }
+        });
+    },
+    LoadHtml(versionTree, platform, target) {
+        // Return a promise that resolves when all the HTML files are loaded
+        return new Promise(function (resolve, reject) {
+            // Load the HTML files
+            versionTree.forEach(async function (asset) {
+                if (!asset.Url.startsWith("/") & !asset.Url.startsWith("https://cdn.siperb.com/")) {
+                    console.log(`LoadHtml: %cUnable to load HTML: ${asset.Url}`, "color: red;");
+                    return; // Skip assets that are not from the CDN
+                }
+                if ((asset.Platform == "common" || asset.Platform == platform) && asset.Type == "html") {
+                    try{
+                        let response = await fetch(asset.Url);
+                        if (!response.ok) {
+                            console.log(`LoadHtml: %cError loading HTML: ${asset.Url}`, "color: red;");
+                            resolve();
+                            return;
+                        }
+                        else {
+                            let html = await response.text();
+                            if(html){
+                                target.open();
+                                target.write(html);
+                                target.close();
+                                asset.Loaded = true;
+                                console.log("LoadHtml: %cAll HTML files loaded", "color: green;");
+                                resolve();
+                                return;
+                            }
+                            else {
+                                console.log(`LoadHtml: %cError loading HTML: ${asset.Url}`, "color: red;");
+                                resolve();
+                                return;
+                            }
+                        }
+                    }
+                    catch(err){
+                        console.log(`LoadHtml: %cError loading HTML: ${asset.Url}`, "color: red;");
+                        resolve();
+                        return;
+                    }
+                }
+            });
+        });
+    },
+    LoadCss(versionTree, platform, target) {
+        return new Promise(function (resolve, reject) {
+            // Load the CSS files
+            versionTree.forEach(function (asset) {
+                if (!asset.Url.startsWith("/") & !asset.Url.startsWith("https://cdn.siperb.com/")) {
+                    console.log(`LoadCss: %cUnable to load CSS: ${asset.Url}`, "color: red;");
+                    return; // Skip assets that are not from the CDN
+                }
+                if ((asset.Platform == "common" || asset.Platform == platform) && asset.Type == "css") {
+                    // Create a link element and set the href to the asset URL
+                    let link = target.createElement("link");
+                    link.href = asset.Url;
+                    link.rel = "stylesheet";
+                    link.type = "text/css";
+                    // Append the link to the head of the phone iframe
+                    target.head.appendChild(link);
+                    // They will load in their own time, so we don't need to wait for them
+                }
+            });
+            // Loading CSS done
+            console.log("LoadCss: %cAll CSS files Added", "color: green;");
+            return resolve();
+        });
+    },
+    LoadScripts(versionTree, platform, target) {
+        return new Promise(function (resolve, reject) {
+            // Load the JS files
+            versionTree.forEach(function (asset) {
+                if (!asset.Url.startsWith("/") & !asset.Url.startsWith("https://cdn.siperb.com/")) {
+                    console.log(`LoadScripts: %cUnable to load JS: ${asset.Url}`, "color: red;");
+                    return; // Skip assets that are not from the CDN
+                }
+                if ((asset.Platform == "common" || asset.Platform == platform) && asset.Type == "js") {
+                    // Create a script element and set the src to the asset URL
+                    // We need to use the phone iframe's document to add the script
+                    let script = target.createElement("script");
+                    script.onload = function () {
+                        // Check if the asset has dependencies
+                        // Dependency files should be packed into a single file
+                        if (asset.Dependencies) {
+                            asset.Dependencies.forEach(function (dependency) {
+                                if (!dependency.Url.startsWith("https://cdn.siperb.com/")) {
+                                    return; // Skip assets that are not from the CDN
+                                }
+                                // Load the dependency
+                                let depScript = target.createElement("script");
+                                depScript.onload = function () {
+                                    // Set the Loaded property to true
+                                    dependency.Loaded = true;
+                                };
+                                depScript.onerror = function () {
+                                    console.warn(`LoadScripts: %cError loading JS: ${dependency.Url}`, "color: red;");
+                                };
+                                depScript.src = dependency.Url;
+                                // Append the script to the head of the phone iframe
+                                target.head.appendChild(depScript);
+                                // These can load in their own time, so we don't need to wait for them
+                            });
+                        }
+                        // Set the Loaded property to true
+                        asset.Loaded = true;
+                        // Check if all the JS files are loaded, by looking at the .Loaded property
+                        let allLoaded = true;
+                        versionTree.forEach(function (asset) {
+                            if ((asset.Platform == "common" || asset.Platform == platform) && asset.Type == "js" && asset.Loaded == false) allLoaded = false;
+                        });
+                        if (allLoaded) {
+                            console.log("LoadScripts: %cAll JS files loaded", "color: green;");
+                            resolve();
+                        }
+                    };
+                    script.onerror = function () {
+                        // There is no error handling for this, but we should probably do something
+                        console.log(`LoadScripts: %cError loading JS: ${asset.Url}`, "color: red;");
+                    };
+                    script.src = asset.Url;
+                    // Append the script to the head of the phone iframe
+                    target.head.appendChild(script);
+                }
+            });
+        });
+    },
+    ProvisionPhone(options){
+        return new Promise(async function(resolve, reject){
+            if (!options.Provisioning || !options.PhoneFrame || !options.ProfileUserId || !options.SessionId || !options.UserId) {
+                console.log(`ProvisionPhone: %cInvalid options`, "color: red;");
+                return reject("Invalid options");
+            }
+            const PhoneWindow = (options.PhoneFrame.contentWindow) ? options.PhoneFrame.contentWindow : null;
+            if (!PhoneWindow) {
+                console.log(`ProvisionPhone: %cInvalid PhoneFrame`, "color: red;");
+                return reject("Invalid PhoneFrame");
+            }
+            const phoneDoc = (PhoneWindow.document) ? PhoneWindow.document : null;
+            const phone = (PhoneWindow.phone) ? PhoneWindow.phone : null;
+            if (!phoneDoc || !phone) {
+                console.log(`ProvisionPhone: %cPhone not loaded`, "color: red;");
+                return reject("Phone not loaded");
+            }
+
+            const provisioning = options.Provisioning;
+
+            // Storage Settings
+            // ================
+            // The Phone Profile User ID is the Device ID
+            phone.PROFILE_USER_ID = options.ProfileUserId;
+            console.log("ProvisionPhone: %cCalling phone.InitStorage()", "color: blue;");
+            await phone.InitStorage();
+        
+            // Core Settings
+            // =============
+            console.log("ProvisionPhone: %cCalling phone.InitBrowserPhone()", "color: blue;");
+            await phone.InitBrowserPhone();
+
+            // Media Manager Settings
+            // ======================
+            phone.Settings.MediaLocation = "https://cdn.siperb.com/media/";          // Defaults to "./media/"
+            console.log("ProvisionPhone: %cCalling phone.InitMediaManager()", "color: blue;");
+            await phone.InitMediaManager(phone.MediaManagerCore.Web);
+
+
+            // Browser Phone UI
+            // ================
+            phone.Settings.MaxDidLength = 16;
+            phone.Settings.EnableAlphanumericDial = true;
+            if(typeof provisioning.UiMaxWidth !== "undefined" && provisioning.UiMaxWidth !== null) {
+                phone.Settings.UiMaxWidth = provisioning.UiMaxWidth;
+            }
+            // Personalization settings cannot be provisioned, but if its not set we can set the default
+            if(typeof phone.Settings.DisplayDateFormat === "undefined")  phone.Settings.DisplayDateFormat = "YYYY-MM-DD";
+            // Personalization settings cannot be provisioned, but if its not set we can set the default
+            if(typeof phone.Settings.DisplayTimeFormat === "undefined") phone.Settings.DisplayTimeFormat = "h:mm:ss A";
+            // Personalization settings cannot be provisioned, but if its not set we can set the default
+            if(typeof phone.Settings.UiThemeStyle === "undefined") phone.Settings.UiThemeStyle = "system";
+            // Personalization settings cannot be provisioned, but if its not set we can set the default
+            if(typeof phone.Settings.Language === "undefined") phone.Settings.Language = "auto";
+            // Personalization settings cannot be provisioned, but if its not set we can set the default
+            if(typeof phone.Settings.BuddyAutoDeleteAtEnd === "undefined") phone.Settings.BuddyAutoDeleteAtEnd = false;
+            // Personalization settings cannot be provisioned, but if its not set we can set the default
+            if(typeof phone.Settings.HideAutoDeleteBuddies === "undefined") phone.Settings.HideAutoDeleteBuddies = false;
+            // Personalization settings cannot be provisioned, but if its not set we can set the default
+            if(typeof phone.Settings.BuddySortBy === "undefined") phone.Settings.BuddySortBy = "activity";     // alphabetical | activity
+
+
+            if(typeof provisioning.VideoResampleSize !== "undefined" && provisioning.VideoResampleSize !== null) {
+                phone.Settings.VideoResampleSize = provisioning.VideoResampleSize;
+            }
+
+            if(typeof provisioning.profileName !== "undefined" && provisioning.profileName !== null) {
+                phone.Settings.ProfileUserName = provisioning.profileName;
+            }
+
+            phone.Settings.AvatarLocation = "https://cdn.siperb.com/avatars/";       // Defaults to "./avatars/"
+            phone.Settings.AvailableAvatar = ["default.0.webp", "default.1.webp", "default.2.webp", "default.3.webp", "default.4.webp", "default.5.webp", "default.6.webp", "default.7.webp", "default.8.webp"];
+
+            phone.Settings.WallpaperLocation = "https://cdn.siperb.com/wallpaper/";  // Defaults to "./wallpaper/"
+            phone.Settings.AvailableWallpaper = [{ "Dark": "wallpaper.0.dark.webp", "Light": "wallpaper.0.light.webp" }, { "Dark": "wallpaper.0.dark.webp", "Light": "wallpaper.0.light.webp" }];
+            phone.Settings.WallpaperLight = "wallpaper.0.light.webp";                               // A file name from the above list. Defaults to "wallpaper.0.light.webp"
+            phone.Settings.WallpaperDark = "wallpaper.0.dark.webp";                                 // A file name from the above list. Defaults to "wallpaper.0.dark.webp"
+
+            phone.Settings.EnableAvatar = true;
+            phone.Settings.EnabledSettings = true;
+            phone.Settings.EnableCallRecording = true;
+            phone.Settings.EnableDialPad = true;
+            phone.Settings.EnableMessageStreamSearch = false;
+            phone.Settings.EnableAutoAnswer = true;
+            phone.Settings.EnableDoNotDisturb = true;
+            phone.Settings.EnableCallWaiting = true;
+            phone.Settings.EnableCallRecording = false;
+            phone.Settings.EnableConferenceCall = false;
+            phone.Settings.EnableCallTransfer = true;
+            phone.Settings.EnableCallHold = true;
+            phone.Settings.EnableCallMute = true;
+            phone.Settings.EnableVideoCalling = false;
+            phone.Settings.EnableDeviceSelector = true;
+            phone.Settings.EnableVideoPresentation = false;
+            phone.Settings.EnablePresentBlank = false;
+            phone.Settings.EnablePresentPicture = false;
+            phone.Settings.EnablePresentWebcam = false;
+            phone.Settings.EnablePresentScreen = false;
+            phone.Settings.EnablePresentVideo = false;
+            phone.Settings.EnablePresentWhiteboard = false;
+            phone.Settings.EnableSubscribe = false;
+            phone.Settings.EnablePresence = false;
+            phone.Settings.EnableText = false;
+            phone.Settings.EnableFax = false;
+            phone.Settings.EnableSMS = false;
+            phone.Settings.EnablePush = true;
+            phone.Settings.EnableDisplayCallDetailRecords = true;
+
+            // Before displaying the phone, you should save the settings
+            phone.SaveSettings();
+
+            // The Onload function must be set before the UI is initialized
+            // Otherwise the rest can be set after
+            if(typeof options.OnLoad == "function"){
+                phone.OnLoad = options.OnLoad;
+            }
+
+            // Should call UI last
+            console.log("Calling phone.InitUiApi()... ");
+            await phone.InitUiApi();
+
+            // Load Providers
+            if (phone.InitSipProvider) {
+                await phone.InitSipProvider(phone.SipProviderCore.Web);
+                phone.AddProvider(phone.SipProvider);
+                await phone.SipProvider.Init({
+                    // We set the SIP details, but don't save them
+                    wssServer: provisioning.SipWssServer,
+                    SipUsername: provisioning.SipUsername,
+                    SipPassword: provisioning.SipPassword,
+                    SipDomain: provisioning.SipDomain,
+                    DisplayName: phone.Settings.ProfileUserName,
+                    ContactUserName: provisioning.SipContact,
+                    WebSocketPort: provisioning.SipWebsocketPort,
+                    ServerPath: provisioning.SipServerPath,
+                    UserAgentStr: "Siperb/0.4 (Web) "+ navigator.userAgent,
+                    ExtraInviteHeaders : {
+                        "X-Siperb-Sid": options.SessionId,
+                        "X-Siperb-Uid": window.UserId
+                    },
+                    // RegisterContactParams : AdditionalContactParams //(this is for push notifications)
+                });
+                phone.SipProvider.Connect();
+            }
+            console.log("ProvisionPhone: %cProvisioning Complete", "color: green;");
+            return resolve(phone);
+        });
+    },
+
+
 };
 
 // Export for modules (ESM/CommonJS)

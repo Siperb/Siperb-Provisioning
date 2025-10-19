@@ -304,52 +304,79 @@ These examples show how to:
 - **Browser & Module Support**: Works in both browser and modern JS module environments.
 - **Extensible**: Easily add more API calls or extend caching logic as needed.
 
-## Testing locally
 
-You can quickly try the included demo/test files in a local static server:
+# Full Browser Phone Example
 
-```sh
-python3 -m http.server 7777
+This repository includes a fully usable, IFRAME‑based Browser Phone that you can embed into any web app. It follows the same secure flow described above: Login → (optional) GetDevices → GetProvisioning → Initialize Phone. The UI, logic, and media assets are loaded on demand from the Siperb CDN and initialized inside your own IFRAME.
+
+![Siperb Browser Phone – Web Phone UI](./screenshots/test-Browser-Phone.png)
+
+
+Why an IFRAME?
+- The phone UI ships with its own HTML, CSS, and JS. Loading it in an IFRAME isolates styles and scripts from your app and ensures responsive behavior across screen sizes.
+- The smallest supported footprint is ~320×320 px; 400×640 (or larger) is recommended. Fullscreen is supported.
+
+How it works (high level)
+1) Authenticate with your Personal Access Token (PAT) to obtain a SessionToken and UserId.
+2) Obtain provisioning for a specific DeviceToken (from Admin Control Panel → Script device).
+3) Create an IFRAME (src="about:blank") and call `SiperbAPI.LoadBrowserPhone(frame)` to load the UI from CDN.
+4) Call `SiperbAPI.ProvisionPhone(...)` with your provisioning + session to configure SIP and bring the phone online.
+
+
+```html
+<!-- 1) Include the UMD build so window.SiperbAPI is available -->
+<script src="./dist/Siperb-Provisioning.umd.min.js"></script>
+
+<!-- 2) Add a container IFRAME (recommended ~400x640 or larger) -->
+<iframe id="phoneFrame" src="about:blank" style="width:400px;height:640px;border:1px solid #000;border-radius:6px;"></iframe>
+
+<script>
+	(async () => {
+		// 3) Login to get SessionToken and UserId
+		const pat = 'YOUR_ACCESS_TOKEN';
+		const session = await window.SiperbAPI.Login(pat);
+
+		// 4) Get provisioning for your Script Device (DeviceToken from Admin Control Panel)
+		const deviceToken = 'YOUR_DEVICE_TOKEN';
+		const provisioning = await window.SiperbAPI.GetProvisioning({
+			UserId: session.UserId,
+			DeviceToken: deviceToken,
+			SessionToken: session.SessionToken,
+			EnableCache: true,
+			ProvisioningKey: 'SiperbProvisioning'
+		});
+
+		// 5) Load the Browser Phone UI into the IFRAME
+		const phoneFrame = document.getElementById('phoneFrame');
+		await window.SiperbAPI.LoadBrowserPhone(phoneFrame);
+
+		// 6) Provision and bring the phone online
+		const phoneAPI = await window.SiperbAPI.ProvisionPhone({
+			Provisioning: provisioning,
+			PhoneFrame: phoneFrame,
+			ProfileUserId: deviceToken,      // Typically the DeviceToken
+			SessionId: session.SessionToken,  // Used for custom SIP headers
+			UserId: session.UserId,
+		});
+
+	})();
+</script>
 ```
 
-Then open these in your browser:
+Under the hood
+- `LoadBrowserPhone(iframe)` fetches a version tree and loads the phone’s HTML, CSS, and JS from the Siperb CDN into the IFRAME’s document.
+- `ProvisionPhone(options)` wires up storage, media, UI, and the SIP provider using your provisioning:
+	- WSS endpoint: `SipWssServer` + `SipWebsocketPort` + `SipServerPath`
+	- SIP auth: `SipUsername` / `SipPassword` / `SipDomain`
+	- Static contact: `SipContact` (ContactUserName)
+	- Custom headers: `X-Siperb-Sid`, `X-Siperb-Uid` for call requests
 
-- `http://localhost:7777/test-SIPJS.html` — SIP.js via browser with global `SIP` if you bundle it yourself; otherwise see JsSIP example
-- `http://localhost:7777/test-SIPJS.js` — referenced by the HTML (adjust as needed)
-- `http://localhost:7777/test-JSSIP.js` — JsSIP module example (or load JsSIP from CDN and use `window.JsSIP`)
+Requirements & notes
+- Requires Internet access to the Siperb CDN; offline is not supported for the Browser Phone (use Desktop Phone for offline scenarios).
+- If your environment uses strict egress controls, whitelist the Siperb CDN domains.
+- The IFRAME must be dedicated to the phone (don’t attempt to inject the phone UI into a DIV on your page).
 
-Notes:
-- JsSIP offers a CDN UMD build you can load in a `<script>` tag:
-	```html
-	<script src="https://cdn.jsdelivr.net/npm/jssip@3/dist/jssip.min.js"></script>
-	<script>
-		const JsSIP = window.JsSIP;
-		// ... use JsSIP here ...
-	</script>
-	```
-- SIP.js does not currently provide a stable ES module on CDN. Use it in module projects via npm (`import { UserAgent } from 'sip.js'`) or bundle it for the browser.
 
-## Troubleshooting & FAQ
-
-- Browser error: `Failed to resolve module specifier "sip.js"`
-	- Cause: Trying to import SIP.js directly in the browser without bundling.
-	- Fix: Use JsSIP via CDN for browser tests, or bundle SIP.js (Rollup/Webpack) for `<script type="module">` usage.
-
-- Node error: `WebSocket is not defined` when using SIP.js in Node
-	- Cause: SIP.js expects a browser-like WebSocket. Node needs a WebSocket implementation.
-	- Fix: Add a WebSocket polyfill (e.g., `npm i ws`) and wire it before constructing the UserAgent, or run the test in a browser.
-
-- Mixed provisioning field names (SIPUsername vs SipUsername)
-	- Use `SipUsername`, `SipPassword`, `SipDomain`, `SipWssServer`, `SipWebsocketPort`, `SipServerPath`, and `ContactUserName` consistently.
-
-## Notes
-- Always keep your access tokens secure and never expose them in client-side code unless you trust the environment.
-- The provisioning object may contain sensitive SIP credentials—handle with care.
-
-## License
-See LICENSE file.
-# Siperb-Provisioning
-This project show how to Provision a Siperb Device and load Browser Phone, SIP.js JsSIP.js or your own custom Web-based SIP client.
 
 ## Building, Running, and Compiling the Library
 
@@ -365,20 +392,14 @@ npm install
 npm run build
 ```
 
-### Watch for Changes (Auto-compile)
-
-```sh
-npm run watch
-```
-
 ### Build and Show Completion Message
 
-```sh
-npm start
-```
 
-This will create:
-- `./dist/Siperb-Provisioning.umd.min.js` (UMD for browser and Node.js)
-- `./dist/Siperb-Provisioning.esm.min.js` (ES module)
+```sh
+npm start           # builds and opens test-index.html
+npm run start:sipjs # builds and opens test-SIPJS.html
+npm run start:jssip # builds and opens test-JSSIP.html
+npm run start:phone # builds and opens test-Browser-Phone.html
+```
 
 ---
