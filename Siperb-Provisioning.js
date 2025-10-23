@@ -238,6 +238,11 @@ const Siperb = {
             }
         });
     },
+    /**
+     * Load the Browser Phone into the IFRAME
+     * @param {HTMLIFrameElement} The iframe element to load the phone into 
+     * @returns {Promise<Object>} - resolves when done, or rejects with error
+     */
     LoadBrowserPhone(iframeElement){
         return new Promise(async function(resolve, reject){
             // Load the Browser Phone into the IFRAME
@@ -280,6 +285,7 @@ const Siperb = {
             }
         });
     },
+    // Internal Function to Load the Version Tree
     LoadVersionTree(url, cacheKey) {
         return new Promise(async function (resolve, reject) {
             // Check if the version tree is already in localStorage
@@ -320,6 +326,7 @@ const Siperb = {
             }
         });
     },
+    // Internal Function to Load HTML files
     LoadHtml(versionTree, platform, target) {
         // Return a promise that resolves when all the HTML files are loaded
         return new Promise(function (resolve, reject) {
@@ -364,6 +371,7 @@ const Siperb = {
             });
         });
     },
+    // Internal Function to Load CSS files
     LoadCss(versionTree, platform, target) {
         return new Promise(function (resolve, reject) {
             // Load the CSS files
@@ -388,6 +396,7 @@ const Siperb = {
             return resolve();
         });
     },
+    // Internal Function to Load JS files
     LoadScripts(versionTree, platform, target) {
         return new Promise(function (resolve, reject) {
             // Load the JS files
@@ -446,6 +455,17 @@ const Siperb = {
             });
         });
     },
+    /**
+     * 
+     * @param {Object} options object with the following properties:
+     * @param {Object} options.Provisioning - The provisioning object
+     * @param {HTMLIFrameElement} options.PhoneFrame - The iframe element containing the phone
+     * @param {string} options.ProfileUserId - The Profile User ID (Device ID)
+     * @param {string} options.SessionId - The current session ID
+     * @param {string} options.UserId - The current user ID
+     * @param {function} [options.OnLoad] - Optional OnLoad callback function
+     * @returns {Promise} - Resolves when the phone is provisioned, or rejects with an error
+     */
     ProvisionPhone(options){
         return new Promise(async function(resolve, reject){
             if (!options.Provisioning || !options.PhoneFrame || !options.ProfileUserId || !options.SessionId || !options.UserId) {
@@ -594,8 +614,6 @@ const Siperb = {
             return resolve(phone);
         });
     },
-
-
 };
 
 // Export for modules (ESM/CommonJS)
