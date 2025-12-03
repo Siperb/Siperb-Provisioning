@@ -604,7 +604,8 @@ const Siperb = {
                     UserAgentStr: "Siperb/0.4 (Web) "+ navigator.userAgent,
                     ExtraInviteHeaders : {
                         "X-Siperb-Sid": options.SessionId,
-                        "X-Siperb-Uid": window.UserId
+                        "X-Siperb-Uid": window.UserId,
+                        "Authorization": "Bearer " + provisioning.SipJwt || ""
                     },
                     // RegisterContactParams : AdditionalContactParams //(this is for push notifications)
                 });
