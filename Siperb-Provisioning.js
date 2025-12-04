@@ -591,7 +591,7 @@ const Siperb = {
             if (phone.InitSipProvider) {
                 await phone.InitSipProvider(phone.SipProviderCore.Web);
                 phone.AddProvider(phone.SipProvider);
-                await phone.SipProvider.Init({
+                let phoneOptions  = {
                     // We set the SIP details, but don't save them
                     wssServer: provisioning.SipWssServer,
                     SipUsername: provisioning.SipUsername,
@@ -601,14 +601,28 @@ const Siperb = {
                     ContactUserName: provisioning.SipContact,
                     WebSocketPort: provisioning.SipWebsocketPort,
                     ServerPath: provisioning.SipServerPath,
-                    UserAgentStr: "Siperb/0.4 (Web) "+ navigator.userAgent,
-                    ExtraInviteHeaders : {
-                        "X-Siperb-Sid": options.SessionId,
-                        "X-Siperb-Uid": window.UserId,
-                        "Authorization": "Bearer " + provisioning.SipJwt || ""
-                    },
+                    UserAgentStr: "Siperb/0.4 (Script) "+ navigator.userAgent,
                     // RegisterContactParams : AdditionalContactParams //(this is for push notifications)
-                });
+                }
+                if(provisioning.RegistrationMode == "Proxy" || provisioning.SipWssServer.endsWith(".siperb.com")){
+                    phoneOptions.ExtraRegisterHeaders = {
+                        "X-Siperb-Sid": options.SessionId,
+                        "X-Siperb-Uid": options.UserId,
+                    }
+                    // Optionally Add Bearer Token for JWT Authentication
+                    if(provisioning.SipJwt && provisioning.SipJwt != ""){
+                        phoneOptions.ExtraRegisterHeaders.Authorization = "Bearer " + provisioning.SipJwt;
+                    }
+                    phoneOptions.ExtraInviteHeaders = {
+                        "X-Siperb-Sid": options.SessionId,
+                        "X-Siperb-Uid": options.UserId,
+                    }
+                    // Optionally Add Bearer Token for JWT Authentication
+                    if(provisioning.SipJwt && provisioning.SipJwt != ""){
+                        phoneOptions.ExtraInviteHeaders.Authorization = "Bearer " + provisioning.SipJwt;
+                    }
+                }
+                await phone.SipProvider.Init(phoneOptions);
                 phone.SipProvider.Connect();
             }
             console.log("ProvisionPhone: %cProvisioning Complete", "color: green;");

@@ -55,10 +55,16 @@
             // Example: Make an outbound call with custom headers
             const target = window.SIP.UserAgent.makeURI("sip:*65@siperb.com"); // Replace with real destination
             const options = {
+                // If you are connecting to Siperb, then you should also add the following headers to both the REGISTER and INVITE requests
                 extraHeaders: [
+                    // Your Siperb Session token
                     `X-Siperb-Sid: ${session.SessionToken}`,
-                    `X-Siperb-Uid: ${session.UserId}`
+                    // Your Siperb User ID
+                    `X-Siperb-Uid: ${session.UserId}`,
+                    // Your Siperb JSON web Token
+                    `Authorization: Bearer ${provisioning.SipJwt}`
                 ]
+                // ...other call options as needed
             }
             const inviter = new window.SIP.Inviter(userAgent, target, options);
             await inviter.invite();
